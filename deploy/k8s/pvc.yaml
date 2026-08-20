@@ -1,0 +1,14 @@
+# Single volume holds both the cloned repo (personal profile data, CVs,
+# tracker) and $HOME (Claude Code auth, git config) - see deployment.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-job-search-workspace
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # LaTeX builds and node_modules-equivalents (bun caches) add up faster
+      # than the repo itself; 5Gi gives headroom without being wasteful.
+      storage: 5Gi

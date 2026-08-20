@@ -1,0 +1,35 @@
+# Coolify: create a "Docker Compose" resource pointing at this file (set the
+# repo's base directory to deploy/ so the build context stays this folder -
+# small, and never touches personal files elsewhere in the repo).
+#
+# Plain Docker: docker compose -f deploy/docker-compose.yml up -d --build
+#
+# Either way, copy .env.example to .env next to this file first and fill it
+# in - REPO_URL is required, everything else is optional but recommended.
+services:
+  ai-job-search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-job-search-devcontainer:latest
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    environment:
+      # Where Claude Code auth (~/.claude, ~/.claude.json) and git config
+      # live - pointed inside the persistent volume so they survive restarts.
+      HOME: /workspace/home
+      REPO_URL: ${REPO_URL:?set REPO_URL in deploy/.env to your fork's clone URL}
+      GIT_USER_NAME: ${GIT_USER_NAME:-}
+      GIT_USER_EMAIL: ${GIT_USER_EMAIL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SSH_PRIVATE_KEY_FILE: ${SSH_PRIVATE_KEY_FILE:-}
+    volumes:
+      - workspace:/workspace
+      # Only needed if you set SSH_PRIVATE_KEY_FILE above to clone a private
+      # repo over SSH instead of an HTTPS token in REPO_URL. Mount your key
+      # read-only at the path SSH_PRIVATE_KEY_FILE points to, e.g.:
+      # - ./deploy_key:/run/secrets/ssh-privatekey:ro
+
+volumes:
+  workspace:

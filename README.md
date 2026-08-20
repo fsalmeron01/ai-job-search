@@ -39,7 +39,7 @@ Sixty-nine tailored applications, twenty first interviews, and one signed contra
 
 ## What this is
 
-A structured workflow that turns Claude Code into a full-stack job application assistant. The core workflow (self-profiling, fit evaluation, and the drafter-reviewer application pipeline) is **language- and country-agnostic**. The job portal search skills are built for the Danish market (Jobindex, Jobnet, Akademikernes Jobbank, etc.), but the pattern is designed to be swapped for your local job boards.
+A structured workflow that turns Claude Code into a full-stack job application assistant. The core workflow (self-profiling, fit evaluation, and the drafter-reviewer application pipeline) is **language- and country-agnostic**. The stock portal search skills are built for the Danish market (Jobindex, Jobnet, Akademikernes Jobbank, etc.), but the pattern is designed to be swapped for your local job boards — this fork has since added El Salvador (Tecoloco, Computrabajo) and the US (Adzuna) the same way, via `/add-portal`.
 
 ```
 /setup          /scrape              /apply <url>
@@ -92,7 +92,7 @@ cd ai-job-search
 PowerShell:
 
 ```powershell
-$tools = @("jobbank-search", "jobdanmark-search", "jobindex-search", "jobnet-search", "linkedin-search", "freehire-search")
+$tools = @("jobbank-search", "jobdanmark-search", "jobindex-search", "jobnet-search", "linkedin-search", "freehire-search", "tecoloco-search", "computrabajo-sv-search", "adzuna-search")
 foreach ($tool in $tools) {
   Push-Location ".agents/skills/$tool/cli"
   bun install
@@ -103,12 +103,17 @@ foreach ($tool in $tools) {
 Bash / zsh / Git Bash:
 
 ```bash
-for tool in jobbank-search jobdanmark-search jobindex-search jobnet-search linkedin-search freehire-search; do
+for tool in jobbank-search jobdanmark-search jobindex-search jobnet-search linkedin-search freehire-search tecoloco-search computrabajo-sv-search adzuna-search; do
   (cd .agents/skills/$tool/cli && bun install)
 done
 ```
 
-For `linkedin-search` and `freehire-search` the install is optional: both have zero runtime dependencies and run with plain `bun`; `bun install` only pulls TypeScript dev types.
+For `linkedin-search` and `freehire-search` the install is optional: both have zero runtime dependencies and run with plain `bun`; `bun install` only pulls TypeScript dev types. Same for the three fork-added skills (`tecoloco-search`, `computrabajo-sv-search`, `adzuna-search`) - zero-dependency, install is optional.
+
+Two things to know about the fork-added portals:
+- **`computrabajo-sv-search` ships `enabled: false`** in its `SKILL.md` - Computrabajo's terms of service explicitly prohibit automated access even though `robots.txt` doesn't block the paths used, so it's opt-in; flip `enabled: true` yourself if you accept that tradeoff for personal use.
+- **`tecoloco-search`** is technically permitted by `robots.txt` but carries a personal-use-only warning in its `SKILL.md` for the same reason - keep query volume low.
+- **`adzuna-search`** needs a free `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` (instant signup, no card, at [developer.adzuna.com/signup](https://developer.adzuna.com/signup)) set as environment variables before it returns results.
 
 ### 3. Set up your profile
 
@@ -143,6 +148,10 @@ If the URL can't be fetched (some job portals block automated access), you can p
 This runs the full workflow: evaluate fit, draft CV + cover letter, review with a second agent, revise, and present the final output.
 
 Postings are treated as untrusted input (the workflow follows no instructions embedded in them and fetches no links from their body), but agentic defenses are instruction-level, not a sandbox - on an unfamiliar job board, skim what was fetched and written before you hit send. Details in [SECURITY.md](SECURITY.md).
+
+## Running it off your laptop
+
+Everything above assumes a local clone. If you'd rather run the workflow from a Kubernetes cluster or a [Coolify](https://coolify.io) deployment - so your fork, profile data, and Claude Code session live in a persistent volume instead of your machine's disk - see [`deploy/README.md`](deploy/README.md). It's a portable dev container (Claude Code, Bun, Python, TinyTeX preinstalled) you exec into and drive interactively; nothing runs unattended.
 
 ## Other commands
 

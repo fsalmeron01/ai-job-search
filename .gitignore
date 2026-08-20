@@ -33,6 +33,11 @@ linkedin_Profile.pdf
 # fetching service; the .env holding it must never be committed.
 .env
 .env.*
+!deploy/.env.example
+
+# deploy/: real secrets for the dev-container deployment (Coolify's .env,
+# a filled-in k8s Secret) - only the .example templates are tracked.
+deploy/k8s/secret.yaml
 
 # Personal photos and signatures
 *.jpg

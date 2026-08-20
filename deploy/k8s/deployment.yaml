@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-job-search
+  labels:
+    app: ai-job-search
+spec:
+  replicas: 1
+  # Exec-only workload driven by one person at a time - a rolling update
+  # with replicas: 1 would try to schedule the new pod before killing the
+  # old one, but both would fight over the same ReadWriteOnce volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ai-job-search
+  template:
+    metadata:
+      labels:
+        app: ai-job-search
+    spec:
+      containers:
+        - name: ai-job-search
+          # Build and push deploy/Dockerfile to your own registry first,
+          # e.g.: docker build -t <registry>/ai-job-search-devcontainer:latest deploy/
+          #       docker push <registry>/ai-job-search-devcontainer:latest
+          image: <registry>/ai-job-search-devcontainer:latest
+          command: ["/usr/local/bin/entrypoint.sh"]
+          args: ["sleep", "infinity"]
+          env:
+            - name: HOME
+              value: /workspace/home
+            - name: REPO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-job-search-secrets
+                  key: REPO_URL
+            - name: GIT_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ai-job-search-secrets
+                  key: GIT_USER_NAME
+                  optional: true
+            - name: GIT_USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-job-search-secrets
+                  key: GIT_USER_EMAIL
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-job-search-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            # Uncomment alongside the ssh-key volume/mount below if REPO_URL
+            # uses SSH instead of an HTTPS token:
+            # - name: SSH_PRIVATE_KEY_FILE
+            #   value: /run/secrets/ssh-privatekey
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            # - name: ssh-key
+            #   mountPath: /run/secrets
+            #   readOnly: true
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: ai-job-search-workspace
+        # - name: ssh-key
+        #   secret:
+        #     secretName: ai-job-search-secrets
+        #     items:
+        #       - key: ssh-privatekey
+        #         path: ssh-privatekey
+        #         mode: 0400
